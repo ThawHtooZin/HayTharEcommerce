@@ -22,7 +22,7 @@ export default function Shop() {
   const inStock = searchParams.get('in_stock') === 'true'
 
   useEffect(() => {
-    getCategories().then(setCategories)
+    getCategories().then(setCategories).catch(() => setCategories([]))
   }, [])
 
   useEffect(() => {
@@ -38,6 +38,7 @@ export default function Shop() {
 
     getProducts(params)
       .then(setProducts)
+      .catch(() => setProducts([]))
       .finally(() => setLoading(false))
   }, [category, aesthetic, search, maxPrice, sort, inStock])
 

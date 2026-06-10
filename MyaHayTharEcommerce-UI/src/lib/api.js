@@ -1,7 +1,14 @@
 import axios from 'axios'
 
+/** API list responses must be arrays; nginx SPA fallback can return HTML and crash .map() */
+export const ensureArray = (data) => {
+  if (Array.isArray(data)) return data
+  if (data && Array.isArray(data.data)) return data.data
+  return []
+}
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: { Accept: 'application/json' },
 })
 
@@ -13,9 +20,11 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-export const getProducts = (params = {}) => api.get('/products', { params }).then((r) => r.data)
+export const getProducts = (params = {}) =>
+  api.get('/products', { params }).then((r) => ensureArray(r.data))
 export const getProduct = (slug) => api.get(`/products/${slug}`).then((r) => r.data)
-export const getCategories = () => api.get('/categories').then((r) => r.data)
+export const getCategories = () =>
+  api.get('/categories').then((r) => ensureArray(r.data))
 export const subscribeNewsletter = (email) => api.post('/newsletter', { email }).then((r) => r.data)
 export const placeOrder = (data) => api.post('/orders', data).then((r) => r.data)
 export const claimAccount = (data) => api.post('/orders/claim-account', data).then((r) => r.data)

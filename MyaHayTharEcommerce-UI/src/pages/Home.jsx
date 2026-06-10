@@ -31,9 +31,9 @@ export default function Home() {
   const [blindBoxes, setBlindBoxes] = useState([])
 
   useEffect(() => {
-    getProducts({ bestsellers: true }).then(setBestsellers)
-    getProducts({ featured: true }).then((data) => setFeatured(data.slice(0, 4)))
-    getProducts({ blind_box: true }).then((data) => setBlindBoxes(data.slice(0, 1)))
+    getProducts({ bestsellers: true }).then((data) => setBestsellers(data.slice(0, 4))).catch(() => {})
+    getProducts({ featured: true }).then((data) => setFeatured(data.slice(0, 4))).catch(() => {})
+    getProducts({ blind_box: true }).then((data) => setBlindBoxes(data.slice(0, 1))).catch(() => {})
   }, [])
 
   const heroImage = productImage('711679854_3184118295309079_8124434516892269944_n.jpg')
