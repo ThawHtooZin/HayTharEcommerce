@@ -1,0 +1,70 @@
+System Requirements Specification (SRS)
+Project: Kawaii & Trendy E-Commerce Platform
+1. Introduction
+1.1 Purpose This comprehensive document outlines the complete functional, non-functional, and technical requirements for a new e-commerce platform dedicated to "kawaii" aesthetics. The platform will manage both a highly interactive customer-facing storefront and a robust administrative back-office for complete business management.
+1.2 Target Audience The primary target audience consists of global consumers interested in kawaii fashion, anime pop culture, and vibrant, playful aesthetics.
+2. Technical Architecture & Stack
+This section defines the core technologies powering the full-stack application, ensuring a fast, scalable, and visually dynamic experience.
+Front-End Framework (React): The customer storefront and the admin dashboard will be built as Single Page Applications (SPAs) using React for seamless state management and dynamic content updates without full-page reloads.
+Styling & Animations (Tailwind CSS): All user interface components will be styled using Tailwind CSS, ensuring the design is fully responsive across mobile and desktop devices while easily maintaining the cohesive "kawaii" color palette. Advanced animations (loading screens, scrolling behaviors, page transitions) will be implemented to make the site feel alive and interactive.
+Back-End Architecture (Laravel API): The server-side operations will be handled by a headless Laravel PHP framework. Laravel will securely manage the database, user authentication, inventory tracking, order processing, reporting, and payment gateway integrations, serving JSON data to the React front-end.
+3. Front-End Functional Requirements (Customer Storefront)
+These are the features the shoppers will interact with directly.
+3.1 Product Browsing and Discovery
+Dynamic Categorization: Browse products through multifaceted categories such as Apparel, Car Accessories, Home Decor, and specific aesthetics like "Fairycore" or "Pastel Goth".
+Search and Filter: Fast, React-powered search and filtering options, allowing users to sort by Availability (In Stock/Out of Stock), Price (Low to High), and Best Selling.
+Specialty Items: Support for specialized product configurations like "Blind Boxes", "Mystery Packages", and Digital Gift Cards in various denominations.
+3.2 Shopping Cart and Checkout
+Multi-Currency Converter: Automatically display prices in the user's local currency based on geographic location (e.g., USD, AUD, EUR, GBP, JPY).
+Advanced Promotional Engine: The checkout system must support volume-based discounts (e.g., "Extra 10% off when you buy 2 items") and alphanumeric discount codes (e.g., "SWEET" for 20% off).
+Automated Shipping Thresholds: Calculate shipping automatically and apply "Free Worldwide Shipping" when a user's cart subtotal reaches a specified threshold (e.g., over $150 AUD or $49.99 USD).
+3.3 User Account Management & Checkout Flow
+Guest Checkout: The system must allow users to complete a purchase without registering for a password-protected account. Cart data is stored in browser local storage. On guest checkout, the Laravel API automatically creates a lightweight Guest Account (email + browser token, no password) and links all orders to it.
+Guest Account (Browser Session): Guest accounts are persisted via a secure token saved in the user's browser (local storage). Guests can view their order history and tracking status from the Account page on the same device, without signing in. Guest accounts do not require a password and are device-bound by default.
+Guest Account Limitations: Guest users cannot edit their profile, manage saved shipping addresses, sync wishlists to the server, change passwords, or access their account from a different device without upgrading or using manual order lookup (email + order number).
+Full Member Accounts: Users may register or log in with email and password for full account features: profile management, saved addresses, server-synced wishlists, cross-device access, and lifetime purchase history.
+Guest-to-Member Upgrade: Guests may upgrade to a full member account at any time by setting a password. All guest orders on that browser session are automatically migrated to the new member profile.
+Manual Order Lookup (Fallback): If a guest loses their browser session, they can still track orders via email + order number on the Track Order page.
+Wishlists: Full members can save wishlists synced to their account. Guest wishlists remain local to the browser only.
+Customer Reviews: A system that allows users to leave text feedback and 5-star ratings on products they have purchased.
+Newsletter Capture: A subscription form to notify users of new arrivals, exclusive discounts, and restocks.
+4. Back-End Functional Requirements (Admin Dashboard & Management)
+This section outlines the comprehensive back-office requirements for store administrators.
+4.1 Dashboard Overview
+KPI Visualization: A central hub displaying key performance indicators (KPIs) such as Total Revenue, Number of Active Orders, Conversion Rate, and Average Order Value.
+Alerts & Notifications: Real-time alerts for low inventory stock, new customer registrations, and pending customer support tickets.
+4.2 Order Management
+Order Processing Lifecycle: Administrators must be able to view, edit, and update the status of all customer orders (e.g., Pending, Processing, Shipped, Delivered, Cancelled).
+Tracking Integration: Ability to input carrier tracking numbers that automatically trigger shipment notification emails to the customer.
+Returns & Refunds: A dedicated module to process returns, issue partial or full refunds, and automatically update inventory stock based on returned items.
+4.3 Inventory & Product Management
+Product Creation/Editing: Upload high-resolution images, set prices, define SKUs, and write descriptions for new products.
+Variant Management: Configure product variants such as size (e.g., Plus sizes up to 6XL), color, and style.
+Stock Tracking: Automated inventory deduction upon purchase, with tools to manually adjust stock levels during audits.
+4.4 Customer Relationship Management (CRM)
+Customer Directory: A searchable database of all full member accounts and guest account profiles (email, order count, guest vs member status).
+Purchase History: View individual customer order history, total lifetime value, and active wishlist items to assist with support inquiries.
+Newsletter Management: Export subscriber lists for email marketing campaigns.
+4.5 Reporting & Analytics
+Sales Reports: Generate customizable reports based on date ranges (daily, weekly, monthly, annually) breaking down gross sales, net sales, taxes, and shipping costs.
+Product Performance: Automatically track and rank "Top Selling" products and identify slow-moving inventory to inform marketing decisions.
+4.6 Marketing & Content Management System (CMS)
+Promotions Manager: A tool to generate custom discount codes, set usage limits, define expiration dates, and create sitewide sale banners.
+Storefront Customization: Update homepage carousel images, featured categories, and manage blog post publications (e.g., "Top 10 Kawaii Make-Up Trends").
+5. Non-Functional Requirements
+5.1 Usability, Aesthetics, and Animations
+Immersive Animations: The React front-end must heavily utilize advanced animations (custom loading screens, smooth scrolling behaviors, fluid page transitions, and interactive hover states) implemented via Tailwind and React animation libraries.
+Visual Design: The UI must reflect a cohesive "kawaii" aesthetic, utilizing pastel color palettes and playful typography to match the products.
+5.2 Accessibility Standards
+Compliance: The system should strive to conform to the Web Content Accessibility Guidelines (WCAG) 2.1 Level AA standards.
+Accessibility Tools: Despite heavy animations, the site must feature an accessibility widget allowing users to toggle a "Stop Animations" feature, increase text size, invert colors, and apply reading masks.
+5.3 Security and Compliance
+Data Protection: The Laravel backend must securely hash user passwords and handle data via HTTPS. Payment processing must be fully encrypted and routed through compliant third-party gateways.
+Legal Policies: The system footer must provide clear links to the Privacy Policy, Terms of Service, Refund/Return Policy, and Shipping Information. (Note: Front-end age verification pop-ups are explicitly excluded).
+6. Proposed Product Catalog Architecture
+Based on your inventory, the system must support complex nesting for the following primary categories:
+Apparel: Tops (Crop Tops, Hoodies, Graphic Tees), Bottoms (Skirts, Overalls), Dresses, and Sleepwear.
+Car Deco & Accessories: Character-themed steering wheel covers, plush seat belt pads, air fresheners, and sleek leather headrest hooks.
+Plushies & Toys: Stuffed Animals (Categorized by species like Axolotls, Capybaras, Bunnies), Giant Plushies, and Squishy Toys.
+Accessories & Lifestyle: Hair Accessories (large floral scrunchies), Keychains, Bags/Backpacks, and Enamel Pins.
+Home & Kitchen: Lifestyle goods including bento box accessories, Hello Kitty sandwich molds, bedding, and lighting.

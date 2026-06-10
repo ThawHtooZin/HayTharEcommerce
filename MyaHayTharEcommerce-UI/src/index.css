@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Fredoka", system-ui, sans-serif;
+  --font-body: "Nunito", system-ui, sans-serif;
+  --color-cream: #fff5f8;
+  --color-blush: #ffe4ec;
+  --color-pink: #ff6b9d;
+  --color-pink-dark: #e84d82;
+  --color-plum: #2d1b2d;
+  --color-lavender: #f3e8ff;
+  --color-mint: #d1fae5;
+  --color-peach: #ffedd5;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cream font-body text-plum antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .reduce-motion * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+html.a11y-large-text {
+  font-size: 112.5%;
+}
+
+html.a11y-invert {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+html.a11y-invert img,
+html.a11y-invert video {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
