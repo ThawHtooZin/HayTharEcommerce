@@ -44,6 +44,7 @@ class DashboardController extends Controller
             'alerts' => [
                 'low_stock_count' => $lowStock,
                 'pending_orders' => Order::where('status', 'processing')->count(),
+                'pending_payments' => Order::where('payment_status', 'slip_submitted')->count(),
                 'new_registrations' => User::where('role', 'customer')->where('created_at', '>=', now()->subDays(7))->count(),
             ],
             'recent_orders' => $recentOrders,

@@ -105,6 +105,61 @@ class AdminApiTest extends TestCase
         $this->assertDatabaseMissing('products', ['id' => $productId]);
     }
 
+    public function test_admin_product_detail_returns_inventory_metrics_and_recent_orders(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->createProduct(['stock' => 12]);
+        $order = $this->createOrder($this->createCustomer());
+        $order->items()->first()->update([
+            'product_id' => $product->id,
+            'quantity' => 3,
+            'price' => 25,
+        ]);
+
+        $this->getJson("/api/admin/products/{$product->id}")
+            ->assertOk()
+            ->assertJsonPath('product.id', $product->id)
+            ->assertJsonPath('product.sold_units', 3)
+            ->assertJsonPath('product.order_count', 1)
+            ->assertJsonPath('recent_orders.0.id', $order->id);
+    }
+
+    public function test_admin_can_manage_categories_and_cannot_delete_non_empty_category(): void
+    {
+        $this->actingAsAdmin();
+
+        $create = $this->postJson('/api/admin/categories', [
+            'name' => 'Seasonal Gifts',
+            'description' => 'Limited collections',
+        ]);
+
+        $create->assertCreated()
+            ->assertJsonPath('name', 'Seasonal Gifts')
+            ->assertJsonPath('slug', 'seasonal-gifts')
+            ->assertJsonPath('products_count', 0);
+
+        $categoryId = $create->json('id');
+
+        $this->patchJson("/api/admin/categories/{$categoryId}", [
+            'name' => 'Seasonal Collections',
+            'description' => 'Updated collections',
+        ])
+            ->assertOk()
+            ->assertJsonPath('slug', 'seasonal-collections');
+
+        $product = $this->createProduct(['category_id' => $categoryId]);
+
+        $this->deleteJson("/api/admin/categories/{$categoryId}")
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Move or delete the products in this category before deleting it.');
+
+        $product->delete();
+
+        $this->deleteJson("/api/admin/categories/{$categoryId}")
+            ->assertOk()
+            ->assertJsonPath('message', 'Category deleted');
+    }
+
     public function test_admin_can_list_customers_and_newsletter(): void
     {
         $this->actingAsAdmin();

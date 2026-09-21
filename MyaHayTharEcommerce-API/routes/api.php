@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\AdminCustomerController;
+use App\Http\Controllers\Api\Admin\AdminCategoryController;
 use App\Http\Controllers\Api\Admin\AdminDiscountController;
 use App\Http\Controllers\Api\Admin\AdminOrderController;
 use App\Http\Controllers\Api\Admin\AdminProductController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\GuestController;
 use App\Http\Controllers\Api\NewsletterController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\WishlistController;
@@ -21,9 +23,11 @@ Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::post('/newsletter', [NewsletterController::class, 'store']);
 
+Route::get('/payment-methods', [PaymentController::class, 'methods']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/orders', [OrderController::class, 'store']);
+Route::post('/orders/payment-slip', [OrderController::class, 'uploadPaymentSlip']);
 Route::post('/orders/claim-account', [OrderController::class, 'claimAccount']);
 Route::get('/orders/track', [OrderController::class, 'track']);
 Route::get('/guest/me', [GuestController::class, 'me']);
@@ -46,10 +50,17 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/orders/{order}', [AdminOrderController::class, 'show']);
     Route::patch('/orders/{order}', [AdminOrderController::class, 'update']);
     Route::post('/orders/{order}/refund', [AdminOrderController::class, 'refund']);
+    Route::post('/orders/{order}/confirm-payment', [AdminOrderController::class, 'confirmPayment']);
+    Route::post('/orders/{order}/reject-payment', [AdminOrderController::class, 'rejectPayment']);
     Route::get('/products', [AdminProductController::class, 'index']);
     Route::post('/products', [AdminProductController::class, 'store']);
+    Route::get('/products/{product}', [AdminProductController::class, 'show']);
     Route::patch('/products/{product}', [AdminProductController::class, 'update']);
     Route::delete('/products/{product}', [AdminProductController::class, 'destroy']);
+    Route::get('/categories', [AdminCategoryController::class, 'index']);
+    Route::post('/categories', [AdminCategoryController::class, 'store']);
+    Route::patch('/categories/{category}', [AdminCategoryController::class, 'update']);
+    Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy']);
     Route::get('/customers', [AdminCustomerController::class, 'index']);
     Route::get('/customers/{user}', [AdminCustomerController::class, 'show']);
     Route::get('/newsletter', [AdminCustomerController::class, 'newsletterSubscribers']);

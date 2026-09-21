@@ -17,10 +17,6 @@ class ProductController extends Controller
             $query->whereHas('category', fn ($q) => $q->where('slug', $request->category));
         }
 
-        if ($request->filled('aesthetic')) {
-            $query->where('aesthetic', $request->aesthetic);
-        }
-
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(fn ($q) => $q

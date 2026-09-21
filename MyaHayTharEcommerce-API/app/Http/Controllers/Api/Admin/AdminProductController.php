@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,9 +13,20 @@ class AdminProductController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(
-            Product::with('category')->orderByDesc('created_at')->paginate(20)
-        );
+        $products = Product::with('category')->orderByDesc('created_at')->paginate(20);
+        $products->getCollection()->transform(fn (Product $product) => $this->withMetrics($product));
+
+        return response()->json($products);
+    }
+
+    public function show(Product $product): JsonResponse
+    {
+        $product->load('category');
+
+        return response()->json([
+            'product' => $this->withMetrics($product),
+            'recent_orders' => $product->load(['orders' => fn ($query) => $query->orderByDesc('orders.created_at')->limit(10)])->orders,
+        ]);
     }
 
     public function store(Request $request): JsonResponse
@@ -28,7 +40,6 @@ class AdminProductController extends Controller
             'image' => 'required|string',
             'sku' => 'nullable|string|max:50',
             'stock' => 'required|integer|min:0',
-            'aesthetic' => 'nullable|string',
             'badge' => 'nullable|string',
             'in_stock' => 'boolean',
             'is_blind_box' => 'boolean',
@@ -55,7 +66,6 @@ class AdminProductController extends Controller
             'image' => 'sometimes|string',
             'sku' => 'nullable|string|max:50',
             'stock' => 'sometimes|integer|min:0',
-            'aesthetic' => 'nullable|string',
             'badge' => 'nullable|string',
             'in_stock' => 'boolean',
             'is_blind_box' => 'boolean',
@@ -77,5 +87,20 @@ class AdminProductController extends Controller
         $product->delete();
 
         return response()->json(['message' => 'Product deleted']);
+    }
+
+    private function withMetrics(Product $product): Product
+    {
+        $metrics = OrderItem::where('product_id', $product->id)
+            ->selectRaw('COALESCE(SUM(quantity), 0) as sold_units')
+            ->selectRaw('COALESCE(SUM(quantity * price), 0) as gross_revenue')
+            ->selectRaw('COUNT(DISTINCT order_id) as order_count')
+            ->first();
+
+        $product->setAttribute('sold_units', (int) $metrics->sold_units);
+        $product->setAttribute('gross_revenue', (float) $metrics->gross_revenue);
+        $product->setAttribute('order_count', (int) $metrics->order_count);
+
+        return $product;
     }
 }

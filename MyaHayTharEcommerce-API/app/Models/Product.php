@@ -5,12 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Product extends Model
 {
     protected $fillable = [
         'category_id', 'name', 'slug', 'sku', 'stock', 'description', 'price', 'compare_at_price',
-        'image', 'aesthetic', 'badge', 'rating', 'review_count', 'in_stock',
+        'image', 'badge', 'rating', 'review_count', 'in_stock',
         'is_blind_box', 'is_bestseller', 'is_featured',
     ];
 
@@ -35,5 +36,12 @@ class Product extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function orders(): BelongsToMany
+    {
+        return $this->belongsToMany(Order::class, 'order_items')
+            ->withPivot(['quantity', 'price'])
+            ->withTimestamps();
     }
 }

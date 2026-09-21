@@ -18,6 +18,10 @@ class AdminOrderController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->payment_status);
+        }
+
         return response()->json($query->paginate(20));
     }
 
@@ -61,6 +65,50 @@ class AdminOrderController extends Controller
 
         return response()->json([
             'message' => 'Refund processed and inventory restored',
+            'order' => $order->fresh()->load('items.product'),
+        ]);
+    }
+
+    public function confirmPayment(Order $order): JsonResponse
+    {
+        if (! $order->isManualPayment()) {
+            return response()->json(['message' => 'This order does not use manual payment.'], 422);
+        }
+
+        if ($order->payment_status !== 'slip_submitted') {
+            return response()->json(['message' => 'No payment slip to confirm.'], 422);
+        }
+
+        $order->update([
+            'payment_status' => 'confirmed',
+            'status' => 'processing',
+            'payment_rejection_reason' => null,
+        ]);
+
+        return response()->json([
+            'message' => 'Payment confirmed. Order is now processing.',
+            'order' => $order->fresh()->load('items.product'),
+        ]);
+    }
+
+    public function rejectPayment(Request $request, Order $order): JsonResponse
+    {
+        $data = $request->validate([
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        if (! $order->isManualPayment()) {
+            return response()->json(['message' => 'This order does not use manual payment.'], 422);
+        }
+
+        $order->update([
+            'payment_status' => 'rejected',
+            'status' => 'pending',
+            'payment_rejection_reason' => $data['reason'] ?? 'Payment could not be verified. Please upload a clear screenshot.',
+        ]);
+
+        return response()->json([
+            'message' => 'Payment rejected. Customer can re-upload a slip.',
             'order' => $order->fresh()->load('items.product'),
         ]);
     }

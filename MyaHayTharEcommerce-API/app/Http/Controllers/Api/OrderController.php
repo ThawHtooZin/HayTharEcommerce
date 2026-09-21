@@ -11,7 +11,9 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -34,25 +36,40 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
+        if ($request->has('items') && is_string($request->input('items'))) {
+            $request->merge(['items' => json_decode($request->input('items'), true)]);
+        }
+
+        $manualMethods = config('payments.manual_methods', []);
+        $paymentMethodKeys = array_keys(config('payments.methods', []));
+
         $rules = [
+            'email' => 'required|email',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'address' => 'required|string|max:500',
-            'city' => 'required|string|max:255',
-            'postal_code' => 'required|string|max:20',
-            'country' => 'required|string|max:255',
+            'address' => 'required|string|max:1000',
+            'city' => 'nullable|string|max:255',
+            'postal_code' => 'nullable|string|max:20',
+            'country' => 'nullable|string|max:255',
             'currency' => 'nullable|string|size:3',
             'discount_code' => 'nullable|string|max:50',
+            'payment_method' => 'required|string|in:'.implode(',', $paymentMethodKeys),
+            'payment_slip' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
         ];
 
-        if (! $user) {
-            $rules['email'] = 'required|email';
+        $data = $request->validate($rules);
+        $paymentMethod = $data['payment_method'];
+        $isManual = in_array($paymentMethod, $manualMethods, true);
+
+        if ($isManual && ! $request->hasFile('payment_slip')) {
+            throw ValidationException::withMessages([
+                'payment_slip' => ['Please upload a payment screenshot for this payment method.'],
+            ]);
         }
 
-        $data = $request->validate($rules);
         $currency = $data['currency'] ?? 'USD';
         $email = $user?->email ?? $data['email'];
 
@@ -105,17 +122,27 @@ class OrderController extends Controller
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
             'address' => $data['address'],
-            'city' => $data['city'],
-            'postal_code' => $data['postal_code'],
-            'country' => $data['country'],
+            'city' => $data['city'] ?? '',
+            'postal_code' => $data['postal_code'] ?? '',
+            'country' => $data['country'] ?? '',
             'subtotal' => $subtotal,
             'shipping' => $shipping,
             'discount' => $discount,
             'total' => $total,
-            'status' => 'processing',
+            'status' => $isManual ? 'pending' : 'processing',
             'currency' => $currency,
             'is_guest' => $user === null,
+            'payment_method' => $paymentMethod,
+            'payment_status' => $isManual
+                ? ($request->hasFile('payment_slip') ? 'slip_submitted' : 'awaiting_slip')
+                : 'not_required',
         ]);
+
+        if ($request->hasFile('payment_slip')) {
+            $order->update([
+                'payment_slip_path' => $this->storePaymentSlip($request->file('payment_slip'), $order),
+            ]);
+        }
 
         foreach ($orderItems as $item) {
             OrderItem::create([
@@ -222,6 +249,54 @@ class OrderController extends Controller
             ->get();
 
         return response()->json($orders);
+    }
+
+    public function uploadPaymentSlip(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'order_number' => 'required|string',
+            'email' => 'required|email',
+            'payment_slip' => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+        ]);
+
+        $order = Order::where('order_number', strtoupper($data['order_number']))
+            ->where('email', $data['email'])
+            ->first();
+
+        if (! $order) {
+            throw ValidationException::withMessages([
+                'order_number' => ['Order not found.'],
+            ]);
+        }
+
+        if (! $order->isManualPayment()) {
+            throw ValidationException::withMessages([
+                'payment_slip' => ['This order does not require a payment slip.'],
+            ]);
+        }
+
+        if ($order->payment_status === 'confirmed') {
+            throw ValidationException::withMessages([
+                'payment_slip' => ['Payment for this order is already confirmed.'],
+            ]);
+        }
+
+        if ($order->payment_slip_path) {
+            Storage::disk('public')->delete($order->payment_slip_path);
+        }
+
+        $order->update([
+            'payment_slip_path' => $this->storePaymentSlip($request->file('payment_slip'), $order),
+            'payment_status' => 'slip_submitted',
+            'payment_rejection_reason' => null,
+        ]);
+
+        return response()->json($order->fresh()->load('items.product'));
+    }
+
+    private function storePaymentSlip(UploadedFile $file, Order $order): string
+    {
+        return $file->store("payment-slips/{$order->order_number}", 'public');
     }
 
     private function applyPromoCode(?string $code, float $subtotal): float

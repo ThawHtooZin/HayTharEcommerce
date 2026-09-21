@@ -55,6 +55,31 @@ class AuthApiTest extends TestCase
             ->assertJsonStructure(['token']);
     }
 
+    public function test_login_links_existing_guest_orders_with_matching_email(): void
+    {
+        $user = $this->createCustomer(['email' => 'returning@example.com']);
+        $guest = $this->createGuest(['email' => $user->email]);
+        $order = $this->createOrder(null, [
+            'email' => $user->email,
+            'guest_account_id' => $guest->id,
+            'is_guest' => true,
+            'user_id' => null,
+        ]);
+
+        $this->postJson('/api/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'user_id' => $user->id,
+            'guest_account_id' => null,
+            'is_guest' => 0,
+        ]);
+        $this->assertDatabaseMissing('guest_accounts', ['id' => $guest->id]);
+    }
+
     public function test_login_rejects_invalid_credentials(): void
     {
         $this->createCustomer(['email' => 'login@example.com', 'password' => 'password123']);

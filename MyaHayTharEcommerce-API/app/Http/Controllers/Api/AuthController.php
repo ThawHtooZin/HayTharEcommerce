@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\GuestAccount;
+use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,6 +29,8 @@ class AuthController extends Controller
             'role' => 'customer',
         ]);
 
+        $this->linkGuestOrders($user);
+
         $token = $user->createToken('auth')->plainTextToken;
 
         return response()->json([
@@ -49,6 +53,7 @@ class AuthController extends Controller
         }
 
         $user = Auth::user();
+        $this->linkGuestOrders($user);
         $token = $user->createToken('auth')->plainTextToken;
 
         return response()->json([
@@ -67,5 +72,18 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return response()->json($request->user());
+    }
+
+    private function linkGuestOrders(User $user): void
+    {
+        Order::where('email', $user->email)
+            ->whereNull('user_id')
+            ->update([
+                'user_id' => $user->id,
+                'guest_account_id' => null,
+                'is_guest' => false,
+            ]);
+
+        GuestAccount::where('email', $user->email)->delete();
     }
 }
