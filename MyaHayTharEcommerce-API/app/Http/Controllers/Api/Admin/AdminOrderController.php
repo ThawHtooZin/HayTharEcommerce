@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AdminOrderController extends Controller
 {
@@ -37,7 +38,17 @@ class AdminOrderController extends Controller
             'tracking_number' => 'nullable|string|max:100',
         ]);
 
-        $order->update($data);
+        DB::transaction(function () use ($data, $order) {
+            if (($data['status'] ?? null) === 'processing' && $order->status !== 'processing') {
+                if ($order->status !== 'pending') {
+                    abort(422, 'Only pending orders can move to processing.');
+                }
+
+                $this->deductOrderStock($order);
+            }
+
+            $order->update($data);
+        });
 
         return response()->json($order->fresh()->load('items.product'));
     }
@@ -79,11 +90,16 @@ class AdminOrderController extends Controller
             return response()->json(['message' => 'No payment slip to confirm.'], 422);
         }
 
-        $order->update([
-            'payment_status' => 'confirmed',
-            'status' => 'processing',
-            'payment_rejection_reason' => null,
-        ]);
+        DB::transaction(function () use ($order) {
+            if ($order->status === 'pending') {
+                $this->deductOrderStock($order);
+            }
+            $order->update([
+                'payment_status' => 'confirmed',
+                'status' => 'processing',
+                'payment_rejection_reason' => null,
+            ]);
+        });
 
         return response()->json([
             'message' => 'Payment confirmed. Order is now processing.',
@@ -111,5 +127,18 @@ class AdminOrderController extends Controller
             'message' => 'Payment rejected. Customer can re-upload a slip.',
             'order' => $order->fresh()->load('items.product'),
         ]);
+    }
+
+    private function deductOrderStock(Order $order): void
+    {
+        foreach ($order->items as $item) {
+            $product = Product::lockForUpdate()->find($item->product_id);
+            if (! $product || $product->stock < $item->quantity) {
+                abort(422, "Insufficient stock for {$product?->name}.");
+            }
+
+            $product->decrement('stock', $item->quantity);
+            $product->update(['in_stock' => $product->fresh()->stock > 0]);
+        }
     }
 }

@@ -14,7 +14,6 @@ class OrderApiTest extends TestCase
         $product = $this->createProduct();
 
         $response = $this->postJson('/api/orders', $this->checkoutPayload($product, [
-            'email' => 'member@example.com',
         ]));
 
         $response->assertCreated()
@@ -27,7 +26,7 @@ class OrderApiTest extends TestCase
         ]);
     }
 
-    public function test_checkout_applies_bulk_discount_for_multiple_items(): void
+    public function test_checkout_does_not_apply_an_automatic_volume_discount(): void
     {
         $product = $this->createProduct(['price' => 20.00]);
 
@@ -36,7 +35,7 @@ class OrderApiTest extends TestCase
         ]));
 
         $response->assertCreated();
-        $this->assertEquals(4.00, (float) $response->json('discount'));
+        $this->assertEquals(0.00, (float) $response->json('discount'));
     }
 
     public function test_checkout_applies_promo_code(): void

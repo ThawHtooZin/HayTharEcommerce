@@ -18,7 +18,8 @@ class DashboardController extends Controller
         $totalOrders = Order::count();
         $totalCustomers = User::where('role', 'customer')->count();
         $avgOrderValue = $totalOrders > 0 ? round($totalRevenue / $totalOrders, 2) : 0;
-        $lowStock = Product::where('stock', '<=', 10)->where('in_stock', true)->count();
+        $lowStock = Product::where('stock', '>', 1)->where('stock', '<', 20)->count();
+        $criticalStock = Product::where('stock', '<=', 1)->count();
 
         $recentOrders = Order::with('items.product')
             ->orderByDesc('created_at')
@@ -43,6 +44,7 @@ class DashboardController extends Controller
             ],
             'alerts' => [
                 'low_stock_count' => $lowStock,
+                'critical_stock_count' => $criticalStock,
                 'pending_orders' => Order::where('status', 'processing')->count(),
                 'pending_payments' => Order::where('payment_status', 'slip_submitted')->count(),
                 'new_registrations' => User::where('role', 'customer')->where('created_at', '>=', now()->subDays(7))->count(),

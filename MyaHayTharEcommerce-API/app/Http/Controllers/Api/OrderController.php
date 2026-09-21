@@ -20,8 +20,6 @@ use Illuminate\Validation\ValidationException;
 class OrderController extends Controller
 {
     private const SHIPPING_COST = 6.99;
-    private const BULK_DISCOUNT_PERCENT = 10;
-    private const BULK_DISCOUNT_MIN_ITEMS = 2;
 
     private const FREE_SHIPPING_THRESHOLDS = [
         'USD' => 49.99,
@@ -44,7 +42,6 @@ class OrderController extends Controller
         $paymentMethodKeys = array_keys(config('payments.methods', []));
 
         $rules = [
-            'email' => 'required|email',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'address' => 'required|string|max:1000',
@@ -60,6 +57,10 @@ class OrderController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
         ];
 
+        if (! $user) {
+            $rules['email'] = 'required|email';
+        }
+
         $data = $request->validate($rules);
         $paymentMethod = $data['payment_method'];
         $isManual = in_array($paymentMethod, $manualMethods, true);
@@ -74,7 +75,6 @@ class OrderController extends Controller
         $email = $user?->email ?? $data['email'];
 
         $subtotal = 0;
-        $totalItems = 0;
         $orderItems = [];
 
         foreach ($data['items'] as $item) {
@@ -86,7 +86,6 @@ class OrderController extends Controller
             }
             $lineTotal = $product->price * $item['quantity'];
             $subtotal += $lineTotal;
-            $totalItems += $item['quantity'];
             $orderItems[] = [
                 'product' => $product,
                 'quantity' => $item['quantity'],
@@ -94,11 +93,7 @@ class OrderController extends Controller
             ];
         }
 
-        $discount = 0;
-        if ($totalItems >= self::BULK_DISCOUNT_MIN_ITEMS) {
-            $discount += round($subtotal * (self::BULK_DISCOUNT_PERCENT / 100), 2);
-        }
-        $discount += $this->applyPromoCode($data['discount_code'] ?? null, $subtotal);
+        $discount = $this->applyPromoCode($data['discount_code'] ?? null, $subtotal);
 
         $afterDiscount = max(0, $subtotal - $discount);
         $threshold = self::FREE_SHIPPING_THRESHOLDS[$currency] ?? self::FREE_SHIPPING_THRESHOLDS['USD'];
@@ -129,7 +124,7 @@ class OrderController extends Controller
             'shipping' => $shipping,
             'discount' => $discount,
             'total' => $total,
-            'status' => $isManual ? 'pending' : 'processing',
+            'status' => 'pending',
             'currency' => $currency,
             'is_guest' => $user === null,
             'payment_method' => $paymentMethod,
@@ -151,10 +146,6 @@ class OrderController extends Controller
                 'quantity' => $item['quantity'],
                 'price' => $item['price'],
             ]);
-            $item['product']->decrement('stock', $item['quantity']);
-            if ($item['product']->stock <= 0) {
-                $item['product']->update(['in_stock' => false, 'stock' => 0]);
-            }
         }
 
         $response = $order->load('items.product')->toArray();
