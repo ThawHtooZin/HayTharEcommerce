@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Heart, Lock, MapPin, Package, Settings, Sparkles } from 'lucide-react'
 import { getGuestOrders, getOrders, upgradeGuest } from '../lib/api'
 import { formatPrice } from '../lib/products'
+import { PAYMENT_STATUS_LABELS, paymentStatusColor } from '../lib/payments'
 import { useApp } from '../context/AppContext'
 
 const statusColors = {
@@ -179,6 +180,11 @@ export default function Account() {
                         <p className="text-xs text-plum/50">{new Date(order.created_at).toLocaleDateString()}</p>
                         {order.tracking_number && (
                           <p className="text-xs text-pink">Tracking: {order.tracking_number}</p>
+                        )}
+                        {order.payment_status && order.payment_status !== 'not_required' && (
+                          <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${paymentStatusColor(order.payment_status)}`}>
+                            {PAYMENT_STATUS_LABELS[order.payment_status]}
+                          </span>
                         )}
                       </div>
                       <span className="font-semibold text-sm">{formatPrice(order.total, currency)}</span>

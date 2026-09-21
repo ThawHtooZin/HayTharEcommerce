@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Heart, Minus, Plus, Star } from 'lucide-react'
-import { getProduct } from '../lib/api'
+import { addReview, getProduct } from '../lib/api'
 import { formatPrice, productImage } from '../lib/products'
 import { useApp } from '../context/AppContext'
 
 export default function ProductDetail() {
   const { slug } = useParams()
-  const { addToCart, toggleWishlist, isInWishlist, currency } = useApp()
+  const { addToCart, toggleWishlist, isInWishlist, currency, user, showToast } = useApp()
   const [product, setProduct] = useState(null)
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewBody, setReviewBody] = useState('')
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -21,6 +24,26 @@ export default function ProductDetail() {
   if (!product) return <div className="py-24 text-center text-plum/50">Product not found</div>
 
   const inWishlist = isInWishlist(product.id)
+
+  const submitReview = async (event) => {
+    event.preventDefault()
+    setReviewSubmitting(true)
+    try {
+      const review = await addReview(product.id, { rating: reviewRating, body: reviewBody })
+      setProduct((current) => ({
+        ...current,
+        reviews: [...(current.reviews || []), review],
+        review_count: (current.review_count || 0) + 1,
+      }))
+      setReviewBody('')
+      showToast('Review submitted')
+    } catch (error) {
+      const message = error.response?.data?.message || 'Could not submit review'
+      showToast(message, 'error')
+    } finally {
+      setReviewSubmitting(false)
+    }
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
@@ -88,8 +111,6 @@ export default function ProductDetail() {
           </div>
 
           <div className="mt-6 flex flex-wrap gap-4 text-xs text-plum/60">
-            <span>🚚 Free shipping over $49.99</span>
-            <span>💖 10% off when you buy 2+</span>
             <span>✨ {product.in_stock ? 'In stock' : 'Out of stock'}</span>
           </div>
 
@@ -110,6 +131,37 @@ export default function ProductDetail() {
                 ))}
               </div>
             </div>
+          )}
+
+          {user && (
+            <form onSubmit={submitReview} className="mt-8 rounded-2xl bg-white p-5 shadow-sm">
+              <h3 className="font-display text-lg font-semibold text-plum">Write a review</h3>
+              <div className="mt-3 flex items-center gap-1" aria-label="Rating">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <button
+                    key={rating}
+                    type="button"
+                    onClick={() => setReviewRating(rating)}
+                    aria-label={`${rating} star${rating === 1 ? '' : 's'}`}
+                    className="text-pink"
+                  >
+                    <Star size={18} fill={rating <= reviewRating ? 'currentColor' : 'none'} />
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={reviewBody}
+                onChange={(event) => setReviewBody(event.target.value)}
+                placeholder="Share your thoughts"
+                required
+                maxLength={1000}
+                rows={4}
+                className="mt-3 w-full resize-none rounded-xl border border-blush px-3 py-2 text-sm outline-none focus:border-pink"
+              />
+              <button type="submit" disabled={reviewSubmitting} className="mt-3 rounded-full bg-pink px-5 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                {reviewSubmitting ? 'Submitting...' : 'Submit review'}
+              </button>
+            </form>
           )}
         </div>
       </div>

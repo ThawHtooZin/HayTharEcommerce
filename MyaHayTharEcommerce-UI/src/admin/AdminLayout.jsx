@@ -1,11 +1,12 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { BarChart3, LayoutDashboard, Package, ShoppingBag, Tag, Users } from 'lucide-react'
+import { BarChart3, FolderTree, LayoutDashboard, Package, ShoppingBag, Tag, Users } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 
 const links = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/orders', label: 'Orders', icon: ShoppingBag },
   { to: '/admin/products', label: 'Products', icon: Package },
+  { to: '/admin/categories', label: 'Categories', icon: FolderTree, nested: true },
   { to: '/admin/customers', label: 'Customers', icon: Users },
   { to: '/admin/discounts', label: 'Promotions', icon: Tag },
   { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
@@ -41,14 +42,17 @@ export default function AdminLayout() {
         <Link to="/" className="font-display text-lg font-bold text-plum">
           <span className="text-pink">Hay</span>Thar Admin
         </Link>
+        <Link to="/" className="mt-3 block px-3 text-sm text-slate-500 hover:text-pink">
+          Back to store
+        </Link>
         <nav className="mt-6 space-y-1">
-          {links.map(({ to, label, icon: Icon, end }) => (
+          {links.map(({ to, label, icon: Icon, end, nested }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${
+                `flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${nested ? 'ml-5 text-xs' : ''} ${
                   isActive ? 'bg-pink/10 text-pink' : 'text-slate-600 hover:bg-slate-100'
                 }`
               }

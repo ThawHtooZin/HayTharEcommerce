@@ -22,21 +22,13 @@ export default function LoadingScreen() {
           transition={{ duration: 0.5 }}
           className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-cream"
         >
-          <motion.div
-            animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
+          <motion.img
+            src="/logo.png"
+            alt="Hay Thar"
+            animate={{ scale: [1, 1.05, 1] }}
             transition={{ duration: 1.5, repeat: Infinity }}
-            className="text-5xl"
-          >
-            💖
-          </motion.div>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="mt-4 font-display text-xl font-bold text-plum"
-          >
-            HayThar
-          </motion.p>
+            className="h-24 w-auto object-contain sm:h-28"
+          />
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

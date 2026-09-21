@@ -18,7 +18,7 @@ export function AppProvider({ children }) {
   const [wishlist, setWishlist] = useState(() => {
     try { return JSON.parse(localStorage.getItem('haythar_wishlist') || '[]') } catch { return [] }
   })
-  const [currency, setCurrency] = useState(() => localStorage.getItem('haythar_currency') || 'USD')
+  const currency = 'MMK'
   const [reduceMotion, setReduceMotion] = useState(() => localStorage.getItem('haythar_reduce_motion') === 'true')
   const [largeText, setLargeText] = useState(() => localStorage.getItem('haythar_large_text') === 'true')
   const [invertColors, setInvertColors] = useState(() => localStorage.getItem('haythar_invert') === 'true')
@@ -27,8 +27,6 @@ export function AppProvider({ children }) {
 
   useEffect(() => { localStorage.setItem('haythar_cart', JSON.stringify(cart)) }, [cart])
   useEffect(() => { localStorage.setItem('haythar_wishlist', JSON.stringify(wishlist)) }, [wishlist])
-  useEffect(() => { localStorage.setItem('haythar_currency', currency) }, [currency])
-
   useEffect(() => {
     const root = document.documentElement
     root.classList.toggle('reduce-motion', reduceMotion)
@@ -151,7 +149,7 @@ export function AppProvider({ children }) {
   const value = {
     user, guest, cart, wishlist, currency, reduceMotion, largeText, invertColors, readingMask,
     toast, cartCount, isAdmin, isGuest, isMember, displayName,
-    setCurrency, setReduceMotion, setLargeText, setInvertColors, setReadingMask,
+    setReduceMotion, setLargeText, setInvertColors, setReadingMask,
     setUser, setGuestSession, setUserFromAuth, showToast, loadSession,
     addToCart, removeFromCart, updateCartQuantity, clearCart,
     toggleWishlist, isInWishlist, login, register, logout, logoutGuest,

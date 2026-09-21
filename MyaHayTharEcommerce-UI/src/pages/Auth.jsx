@@ -19,20 +19,21 @@ export default function Auth() {
   }, [searchParams])
 
   useEffect(() => {
-    if (user) navigate(redirect, { replace: true })
+    if (user) navigate(user.role === 'admin' ? '/admin' : redirect, { replace: true })
   }, [user, redirect, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     try {
+      let data
       if (mode === 'login') {
-        await login(form.email, form.password)
+        data = await login(form.email, form.password)
       } else {
-        await register(form.name, form.email, form.password, form.password_confirmation)
+        data = await register(form.name, form.email, form.password, form.password_confirmation)
       }
       showToast(`Welcome back, cutie! 💖`)
-      navigate(redirect, { replace: true })
+      navigate(data.user?.role === 'admin' ? '/admin' : redirect, { replace: true })
     } catch (err) {
       const msg = err.response?.data?.message || 'Authentication failed'
       showToast(msg, 'error')

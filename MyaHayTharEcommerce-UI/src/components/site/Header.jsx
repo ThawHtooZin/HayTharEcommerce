@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { Heart, Menu, Search, ShoppingBag, User, X } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
-import { CURRENCIES } from '../../lib/products'
 
 const navLinks = [
   { to: '/shop', label: 'Shop' },
@@ -10,7 +9,7 @@ const navLinks = [
 ]
 
 export default function Header() {
-  const { cartCount, wishlist, currency, setCurrency, isAdmin } = useApp()
+  const { cartCount, wishlist, isAdmin } = useApp()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -20,15 +19,14 @@ export default function Header() {
 
   return (
     <>
-      <div className="bg-pink py-2 text-center text-sm font-medium text-white">
-        Free worldwide shipping on orders over $49.99 — Extra 10% off when you buy 2 items 💖
-      </div>
-
-      <header className="sticky top-0 z-50 border-b border-blush/60 bg-cream/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 lg:px-8">
-          <Link to="/" className="font-display text-2xl font-bold tracking-tight">
-            <span className="text-pink">Hay</span>
-            <span className="text-plum">Thar</span>
+      <header className="sticky top-0 z-50 border-b border-blush/40 bg-gradient-to-b from-white to-blush/25 shadow-[0_1px_12px_rgba(255,107,157,0.08)] backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 lg:px-8">
+          <Link to="/" className="flex shrink-0 items-center">
+            <img
+              src="/logo-nav.png"
+              alt="Hay Thar"
+              className="h-[4.5rem] w-auto object-contain sm:h-[5.25rem] md:h-24"
+            />
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
@@ -40,17 +38,6 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="hidden rounded-full border border-blush bg-white px-3 py-1.5 text-sm font-medium text-plum sm:block"
-              aria-label="Currency"
-            >
-              {Object.keys(CURRENCIES).map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-
             <button
               onClick={() => setSearchOpen(!searchOpen)}
               className="rounded-full p-2 text-plum transition-colors hover:bg-blush"
@@ -98,7 +85,7 @@ export default function Header() {
         </div>
 
         {searchOpen && (
-          <div className="border-t border-blush/60 px-4 py-3">
+          <div className="border-t border-blush/30 bg-white/60 px-4 py-3">
             <form
               onSubmit={(e) => {
                 e.preventDefault()
@@ -122,21 +109,12 @@ export default function Header() {
         )}
 
         {mobileOpen && (
-          <nav className="flex flex-col gap-3 border-t border-blush/60 px-4 py-4 md:hidden">
+          <nav className="flex flex-col gap-3 border-t border-blush/30 bg-white/60 px-4 py-4 md:hidden">
             {navLinks.map((link) => (
               <NavLink key={link.to} to={link.to} className={linkClass} onClick={() => setMobileOpen(false)}>
                 {link.label}
               </NavLink>
             ))}
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="rounded-full border border-blush bg-white px-3 py-2 text-sm font-medium text-plum"
-            >
-              {Object.keys(CURRENCIES).map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
           </nav>
         )}
       </header>

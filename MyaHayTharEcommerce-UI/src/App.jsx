@@ -17,6 +17,7 @@ import AdminLayout from './admin/AdminLayout'
 import AdminDashboard from './admin/AdminDashboard'
 import AdminOrders from './admin/AdminOrders'
 import AdminProducts from './admin/AdminProducts'
+import AdminCategories from './admin/AdminCategories'
 import AdminCustomers from './admin/AdminCustomers'
 import AdminDiscounts from './admin/AdminDiscounts'
 import AdminReports from './admin/AdminReports'
@@ -45,6 +46,7 @@ export default function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="products" element={<AdminProducts />} />
+          <Route path="categories" element={<AdminCategories />} />
           <Route path="customers" element={<AdminCustomers />} />
           <Route path="discounts" element={<AdminDiscounts />} />
           <Route path="reports" element={<AdminReports />} />

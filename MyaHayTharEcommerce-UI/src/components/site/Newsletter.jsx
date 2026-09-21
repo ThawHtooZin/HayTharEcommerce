@@ -36,10 +36,10 @@ export default function Newsletter() {
       className="mx-auto max-w-3xl rounded-3xl bg-blush/60 px-6 py-12 text-center sm:px-12"
     >
       <h2 className="font-display text-3xl font-bold text-plum sm:text-4xl">
-        Join the cuteness club
+        Stay in the loop
       </h2>
       <p className="mt-2 text-plum/70">
-        Get 10% off your first order, restock alerts and secret drops.
+        Get restock alerts and updates on new drops.
       </p>
       <form onSubmit={handleSubmit} className="mx-auto mt-6 flex max-w-md flex-col gap-3 sm:flex-row">
         <input
@@ -55,7 +55,7 @@ export default function Newsletter() {
           disabled={loading}
           className="rounded-full bg-pink px-6 py-3 text-sm font-semibold text-white transition-transform hover:scale-105 hover:bg-pink-dark disabled:opacity-50"
         >
-          Get 10% off
+          Subscribe
         </button>
       </form>
     </Wrapper>

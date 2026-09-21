@@ -2,12 +2,10 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { SlidersHorizontal } from 'lucide-react'
 import { getCategories, getProducts } from '../lib/api'
-import { AESTHETICS, formatPrice, getFreeShippingThreshold, PRICE_FILTERS } from '../lib/products'
-import { useApp } from '../context/AppContext'
+import { PRICE_FILTERS } from '../lib/products'
 import ProductCard from '../components/site/ProductCard'
 
 export default function Shop() {
-  const { currency } = useApp()
   const [searchParams, setSearchParams] = useSearchParams()
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
@@ -15,7 +13,6 @@ export default function Shop() {
   const [mobileFilters, setMobileFilters] = useState(false)
 
   const category = searchParams.get('category') || ''
-  const aesthetic = searchParams.get('aesthetic') || ''
   const search = searchParams.get('search') || ''
   const maxPrice = searchParams.get('max_price') || ''
   const sort = searchParams.get('sort') || 'featured'
@@ -29,7 +26,6 @@ export default function Shop() {
     setLoading(true)
     const params = {}
     if (category) params.category = category
-    if (aesthetic) params.aesthetic = aesthetic
     if (search) params.search = search
     if (maxPrice) params.max_price = maxPrice
     if (inStock) params.in_stock = true
@@ -40,7 +36,7 @@ export default function Shop() {
       .then(setProducts)
       .catch(() => setProducts([]))
       .finally(() => setLoading(false))
-  }, [category, aesthetic, search, maxPrice, sort, inStock])
+  }, [category, search, maxPrice, sort, inStock])
 
   const updateFilter = (key, value) => {
     const next = new URLSearchParams(searchParams)
@@ -67,27 +63,6 @@ export default function Shop() {
               className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${category === cat.slug ? 'bg-pink text-white' : 'bg-white text-plum/70 hover:bg-blush'}`}
             >
               {cat.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="mb-3 text-sm font-semibold text-plum">Aesthetic</h3>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => updateFilter('aesthetic', '')}
-            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${!aesthetic ? 'bg-pink text-white' : 'bg-white text-plum/70 hover:bg-blush'}`}
-          >
-            All
-          </button>
-          {AESTHETICS.map((a) => (
-            <button
-              key={a.slug}
-              onClick={() => updateFilter('aesthetic', a.slug)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${aesthetic === a.slug ? 'bg-pink text-white' : 'bg-white text-plum/70 hover:bg-blush'}`}
-            >
-              {a.name}
             </button>
           ))}
         </div>
@@ -144,9 +119,7 @@ export default function Shop() {
               <h1 className="font-display text-3xl font-bold text-plum">
                 {search ? `Results for "${search}"` : 'All products'}
               </h1>
-              <p className="mt-1 text-sm text-plum/60">
-                {products.length} items · Free shipping over {formatPrice(getFreeShippingThreshold(currency), currency)}
-              </p>
+              <p className="mt-1 text-sm text-plum/60">{products.length} items</p>
             </div>
             <div className="flex items-center gap-3">
               <button

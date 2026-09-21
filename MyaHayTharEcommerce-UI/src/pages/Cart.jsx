@@ -6,7 +6,6 @@ import { calcCartTotals, formatPrice, productImage } from '../lib/products'
 export default function Cart() {
   const { cart, removeFromCart, updateCartQuantity, currency } = useApp()
   const totals = calcCartTotals(cart, currency)
-  const progress = Math.min(100, ((totals.threshold - totals.freeShippingRemaining) / totals.threshold) * 100)
 
   if (cart.length === 0) {
     return (
@@ -23,17 +22,6 @@ export default function Cart() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
       <h1 className="font-display text-3xl font-bold text-plum">Your cart</h1>
-
-      {totals.freeShippingRemaining > 0 && (
-        <div className="mt-6 rounded-2xl bg-blush/50 p-4">
-          <p className="text-sm text-plum/70">
-            You're <strong>{formatPrice(totals.freeShippingRemaining, currency)}</strong> away from <strong>free worldwide shipping</strong> 🚚
-          </p>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-white">
-            <div className="h-full rounded-full bg-pink transition-all" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
-      )}
 
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
@@ -104,6 +92,9 @@ export default function Cart() {
           </p>
           <Link to="/shop" className="mt-3 block text-center text-sm text-plum/60 hover:text-pink">
             Continue shopping
+          </Link>
+          <Link to="/track-order" className="mt-2 block text-center text-sm text-plum/60 hover:text-pink">
+            Track an order
           </Link>
         </div>
       </div>
