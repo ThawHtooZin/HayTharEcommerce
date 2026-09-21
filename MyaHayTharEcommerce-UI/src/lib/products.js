@@ -5,8 +5,6 @@ export function productImage(image) {
 export const FREE_SHIPPING_THRESHOLD = 105000
 
 export const SHIPPING_COST = 6.99
-export const BULK_DISCOUNT_PERCENT = 10
-export const BULK_DISCOUNT_MIN_ITEMS = 2
 
 export function getFreeShippingThreshold() {
   return FREE_SHIPPING_THRESHOLD
@@ -18,18 +16,14 @@ export function formatPrice(amount) {
 
 export function calcCartTotals(items) {
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
-  let discount = 0
-  if (totalItems >= BULK_DISCOUNT_MIN_ITEMS) {
-    discount = subtotal * (BULK_DISCOUNT_PERCENT / 100)
-  }
+  const discount = 0
   const afterDiscount = Math.max(0, subtotal - discount)
   const threshold = getFreeShippingThreshold()
   const shipping = afterDiscount >= threshold ? 0 : SHIPPING_COST
   const total = afterDiscount + shipping
   const freeShippingRemaining = Math.max(0, threshold - afterDiscount)
 
-  return { subtotal, discount, shipping, total, freeShippingRemaining, totalItems, afterDiscount, threshold }
+  return { subtotal, discount, shipping, total, freeShippingRemaining, afterDiscount, threshold }
 }
 
 export const PRICE_FILTERS = [

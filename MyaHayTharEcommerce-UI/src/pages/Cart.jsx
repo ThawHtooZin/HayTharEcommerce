@@ -66,12 +66,6 @@ export default function Cart() {
               <span>Subtotal</span>
               <span>{formatPrice(totals.subtotal, currency)}</span>
             </div>
-            {totals.discount > 0 && (
-              <div className="flex justify-between text-emerald-600">
-                <span>Volume discount (10%)</span>
-                <span>-{formatPrice(totals.discount, currency)}</span>
-              </div>
-            )}
             <div className="flex justify-between text-plum/70">
               <span>Shipping</span>
               <span>{totals.shipping === 0 ? 'Free' : formatPrice(totals.shipping, currency)}</span>

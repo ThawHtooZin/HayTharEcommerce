@@ -17,7 +17,13 @@ export default function AdminProducts() {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [stockDraft, setStockDraft] = useState('')
   const [stockSaving, setStockSaving] = useState(false)
-  const stockAlertThreshold = 10
+  const stockAlertThreshold = 20
+  const stockState = (stock) => {
+    const quantity = Number(stock || 0)
+    if (quantity <= 1) return { label: 'Critical stock', row: 'bg-red-600 text-white', badge: 'bg-red-600 text-white' }
+    if (quantity < stockAlertThreshold) return { label: 'Low stock', row: 'bg-amber-400 text-amber-950', badge: 'bg-amber-400 text-amber-950' }
+    return { label: 'Healthy stock', row: '', badge: 'bg-emerald-600 text-white' }
+  }
   const [modal, setModal] = useState(null)
 
   const load = () => adminProducts().then((r) => setProducts(r.data || r))
@@ -87,8 +93,8 @@ export default function AdminProducts() {
     }
   }
 
-  const lowStockCount = products.filter((product) => Number(product.stock || 0) > 0 && Number(product.stock || 0) <= 10).length
-  const outOfStockCount = products.filter((product) => Number(product.stock || 0) === 0).length
+  const lowStockCount = products.filter((product) => Number(product.stock || 0) > 1 && Number(product.stock || 0) < stockAlertThreshold).length
+  const outOfStockCount = products.filter((product) => Number(product.stock || 0) <= 1).length
 
   return (
     <div>
@@ -129,8 +135,8 @@ export default function AdminProducts() {
             <div className="rounded-lg border border-slate-200 p-4">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="font-semibold text-slate-800">Stock control</h3>
-                <span className={`rounded-full px-2 py-1 text-xs font-semibold ${Number(stockDraft) === 0 ? 'bg-red-100 text-red-700' : Number(stockDraft) <= stockAlertThreshold ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                  {Number(stockDraft) === 0 ? 'Out of stock' : Number(stockDraft) <= stockAlertThreshold ? 'Restock alert' : 'Healthy stock'}
+                <span className={`rounded-full px-2 py-1 text-xs font-semibold ${Number(stockDraft) <= 0 ? 'bg-red-100 text-red-700' : Number(stockDraft) <= stockAlertThreshold ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                  {Number(stockDraft) <= 0 ? 'Out of stock' : Number(stockDraft) <= stockAlertThreshold ? 'Restock alert' : 'Healthy stock'}
                 </span>
               </div>
               <p className="mt-2 text-sm text-slate-500">Alert threshold: {stockAlertThreshold} units. Set a precise quantity for auditability.</p>
@@ -168,29 +174,69 @@ export default function AdminProducts() {
         ))}
       </div>
 
-      {modal === 'form' && <AdminModal title={editingId ? 'Edit product' : 'Add product'} onClose={() => setModal(null)} wide>
+{modal === 'form' && <AdminModal title={editingId ? 'Edit product' : 'Add product'} onClose={() => setModal(null)} wide>
         <form onSubmit={saveProduct}>
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h2 className="font-semibold text-slate-800">{editingId ? 'Edit product' : 'Add product'}</h2>
             {editingId && <button type="button" onClick={resetForm} className="text-sm text-slate-500 hover:text-pink">Cancel</button>}
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <input value={form.name} onChange={(e) => update('name', e.target.value)} placeholder="Product name" required className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-            <select value={form.category_id} onChange={(e) => update('category_id', e.target.value)} required className="rounded-lg border border-slate-200 px-3 py-2 text-sm">
-              <option value="">Category</option>
-              {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-            </select>
-            <input value={form.image} onChange={(e) => update('image', e.target.value)} placeholder="Image filename" required className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-            <input type="number" step="0.01" min="0" value={form.price} onChange={(e) => update('price', e.target.value)} placeholder="Price" required className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-            <input type="number" step="0.01" min="0" value={form.compare_at_price} onChange={(e) => update('compare_at_price', e.target.value)} placeholder="Compare-at price" className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-            <input type="number" min="0" value={form.stock} onChange={(e) => update('stock', e.target.value)} placeholder="Stock" required className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-            <input value={form.sku} onChange={(e) => update('sku', e.target.value)} placeholder="SKU" className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-            <input value={form.badge} onChange={(e) => update('badge', e.target.value)} placeholder="Badge" className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-            <textarea value={form.description} onChange={(e) => update('description', e.target.value)} placeholder="Description" rows={3} className="rounded-lg border border-slate-200 px-3 py-2 text-sm sm:col-span-2 lg:col-span-3" />
+          
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Product Name</label>
+              <input value={form.name} onChange={(e) => update('name', e.target.value)} placeholder="e.g. Graphic Tee" required className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-pink focus:outline-none" />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Category</label>
+              <select value={form.category_id} onChange={(e) => update('category_id', e.target.value)} required className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-pink focus:outline-none">
+                <option value="">Select category</option>
+                {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Image Filename</label>
+              <input value={form.image} onChange={(e) => update('image', e.target.value)} placeholder="e.g. product.jpg" required className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-pink focus:outline-none" />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Price</label>
+              <input type="number" step="0.01" min="0" value={form.price} onChange={(e) => update('price', e.target.value)} placeholder="0.00" required className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-pink focus:outline-none" />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Compare-at Price</label>
+              <input type="number" step="0.01" min="0" value={form.compare_at_price} onChange={(e) => update('compare_at_price', e.target.value)} placeholder="0.00" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-pink focus:outline-none" />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Stock Quantity</label>
+              <input type="number" min="0" value={form.stock} onChange={(e) => update('stock', e.target.value)} placeholder="0" required className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-pink focus:outline-none" />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">SKU</label>
+              <input value={form.sku} onChange={(e) => update('sku', e.target.value)} placeholder="e.g. SKU-001" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-pink focus:outline-none" />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Badge</label>
+              <input value={form.badge} onChange={(e) => update('badge', e.target.value)} placeholder="e.g. New, Sale" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-pink focus:outline-none" />
+            </div>
+            
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Description</label>
+              <textarea value={form.description} onChange={(e) => update('description', e.target.value)} placeholder="Product description..." rows={3} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-pink focus:outline-none" />
+            </div>
           </div>
-          <button type="submit" disabled={saving} className="mt-4 rounded-lg bg-pink px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
-            {saving ? 'Saving...' : editingId ? 'Save changes' : 'Add product'}
-          </button>
+
+          <div className="mt-6 flex justify-end gap-2">
+            <button type="button" onClick={resetForm} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+            <button type="submit" disabled={saving} className="rounded-lg bg-pink px-5 py-2 text-sm font-semibold text-white disabled:opacity-50">
+              {saving ? 'Saving...' : editingId ? 'Save changes' : 'Add product'}
+            </button>
+          </div>
         </form>
       </AdminModal>}
 
@@ -210,22 +256,16 @@ export default function AdminProducts() {
             {products.map((p) => (
               <tr
                 key={p.id}
-                className={`border-b border-slate-50 ${
-                  Number(p.stock) === 0
-                    ? 'bg-red-50'
-                    : Number(p.stock) <= stockAlertThreshold
-                      ? 'bg-amber-50'
-                      : ''
-                }`}
+                className={`border-b border-slate-50 ${stockState(p.stock).row}`}
               >
-                <td className="px-4 py-3 font-medium text-slate-800">{p.name}</td>
+                <td className={`px-4 py-3 font-medium ${Number(p.stock) <= 1 ? 'text-white' : Number(p.stock) < stockAlertThreshold ? 'text-amber-950' : 'text-slate-800'}`}>{p.name}</td>
                 <td className="px-4 py-3">{formatPrice(p.price)}</td>
-                <td className="px-4 py-3">
+                <td className={`px-4 py-3 font-bold ${Number(p.stock) <= 1 ? 'text-white' : Number(p.stock) < stockAlertThreshold ? 'text-amber-950' : 'text-slate-800'}`}>
                   {p.stock ?? 100}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs ${p.in_stock ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                    {p.in_stock ? 'In stock' : 'Out of stock'}
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${stockState(p.stock).badge}`}>
+                    {stockState(p.stock).label}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-slate-600">{p.sold_units ?? 0}</td>

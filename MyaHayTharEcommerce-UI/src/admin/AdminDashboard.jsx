@@ -49,10 +49,17 @@ export default function AdminDashboard() {
         <div className="space-y-4">
           <div className="rounded-xl bg-white p-5 shadow-sm">
             <h2 className="font-semibold text-slate-800">Alerts</h2>
-            <ul className="mt-3 space-y-2 text-sm text-slate-600">
-              <li>📦 {alerts.pending_orders} orders processing</li>
-              <li>⚠️ {alerts.low_stock_count} products low stock</li>
-              <li>👋 {alerts.new_registrations} new signups (7d)</li>
+            <ul className="mt-3 space-y-2 text-sm">
+              <li className="flex items-center justify-between rounded-lg bg-amber-400 px-3 py-2 font-bold text-amber-950">
+                <span>Low stock (2-19)</span>
+                <strong>{alerts.low_stock_count}</strong>
+              </li>
+              <li className="flex items-center justify-between rounded-lg bg-red-600 px-3 py-2 font-bold text-white">
+                <span>Critical stock (0-1)</span>
+                <strong>{alerts.critical_stock_count}</strong>
+              </li>
+              <li className="text-slate-600">📦 {alerts.pending_orders} orders processing</li>
+              <li className="text-slate-600">👋 {alerts.new_registrations} new signups (7d)</li>
             </ul>
           </div>
           <div className="rounded-xl bg-white p-5 shadow-sm">

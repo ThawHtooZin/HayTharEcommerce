@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { adminConfirmPayment, adminOrder, adminOrders, adminRefundOrder, adminRejectPayment, adminUpdateOrder, resolveStorageUrl } from '../lib/api'
+import { adminConfirmPayment, adminOrder, adminOrders, adminRejectPayment, adminUpdateOrder, resolveStorageUrl } from '../lib/api'
 import { PAYMENT_STATUS_LABELS, paymentStatusColor } from '../lib/payments'
 import { formatPrice } from '../lib/products'
 import AdminModal from './AdminModal'
@@ -26,18 +26,13 @@ export default function AdminOrders() {
   }
 
   const addTracking = async (id, tracking) => {
-    await adminUpdateOrder(id, { tracking_number: tracking, status: 'shipped' })
-    load()
-  }
-
-  const refund = async (id) => {
-    if (!confirm('Process full refund and restore inventory?')) return
-    await adminRefundOrder(id, { type: 'full' })
+    await adminUpdateOrder(id, { tracking_number: tracking })
     load()
   }
 
   const confirmPayment = async (id) => {
     await adminConfirmPayment(id)
+    setSelectedOrder((order) => order?.id === id ? { ...order, payment_status: 'confirmed', status: 'processing' } : order)
     load()
   }
 
@@ -45,7 +40,16 @@ export default function AdminOrders() {
     const reason = prompt('Rejection reason (optional):')
     if (reason === null) return
     await adminRejectPayment(id, { reason: reason || undefined })
+    setSelectedOrder((order) => order?.id === id ? { ...order, payment_status: 'rejected', status: 'pending', payment_rejection_reason: reason || 'Payment could not be verified. Please upload a clear screenshot.' } : order)
     load()
+  }
+
+  const nextStatus = { pending: 'processing', processing: 'shipped', shipped: 'delivered' }
+  const statusButtonLabel = { processing: 'Move to Processing', shipped: 'Mark as Shipped', delivered: 'Mark as Delivered' }
+
+  const changeStatus = async (order, status) => {
+    await updateStatus(order.id, status)
+    setSelectedOrder({ ...order, status })
   }
 
   const openDetails = async (id) => {
@@ -90,23 +94,57 @@ export default function AdminOrders() {
             ].map(([label, value]) => (
               <div key={label} className="rounded-lg bg-slate-50 p-3">
                 <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
-                <p className="mt-1 break-words text-sm font-semibold text-slate-800">{value}</p>
+                <p className="mt-1 wrap-break-word text-sm font-semibold text-slate-800">{value}</p>
               </div>
             ))}
           </div>
           <div className="mt-5 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 p-4">
-            <label className="text-sm text-slate-600">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">Order status</span>
-              <select value={selectedOrder.status} onChange={async (event) => { await updateStatus(selectedOrder.id, event.target.value); setSelectedOrder({ ...selectedOrder, status: event.target.value }) }} className="rounded-lg border border-slate-200 px-3 py-2 text-sm capitalize">
-                {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
-              </select>
-            </label>
+            {nextStatus[selectedOrder.status] && (
+              <button type="button" onClick={() => changeStatus(selectedOrder, nextStatus[selectedOrder.status])} className="rounded-lg bg-pink px-4 py-2 text-sm font-medium text-white hover:bg-pink-dark">
+                {statusButtonLabel[nextStatus[selectedOrder.status]]}
+              </button>
+            )}
+            {!['cancelled', 'refunded', 'delivered'].includes(selectedOrder.status) && (
+              <button type="button" onClick={() => changeStatus(selectedOrder, 'cancelled')} className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+                Cancel order
+              </button>
+            )}
+            {selectedOrder.status !== 'refunded' && (
+              <button type="button" onClick={() => changeStatus(selectedOrder, 'refunded')} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+                Mark as Refunded
+              </button>
+            )}
             <label className="text-sm text-slate-600">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">Tracking number</span>
               <input defaultValue={selectedOrder.tracking_number || ''} onBlur={(event) => event.target.value && addTracking(selectedOrder.id, event.target.value)} placeholder="Enter tracking number" className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
             </label>
-            {selectedOrder.status !== 'refunded' && <button type="button" onClick={() => refund(selectedOrder.id)} className="rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100">Refund order</button>}
           </div>
+          {selectedOrder.payment_status && selectedOrder.payment_status !== 'not_required' && (
+            <div className="mt-4 rounded-lg border border-slate-200 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-semibold text-slate-800">Payment verification</h3>
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${paymentStatusColor(selectedOrder.payment_status)}`}>
+                  {PAYMENT_STATUS_LABELS[selectedOrder.payment_status] || selectedOrder.payment_status}
+                </span>
+              </div>
+              {selectedOrder.payment_slip_url && (() => {
+                const slipUrl = resolveStorageUrl(selectedOrder.payment_slip_url)
+                return slipUrl.endsWith('.pdf') ? (
+                  <a href={slipUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-medium text-pink hover:underline">View payment slip PDF</a>
+                ) : (
+                  <a href={slipUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block">
+                    <img src={slipUrl} alt="Payment slip" className="max-h-64 rounded-lg border border-slate-200 object-contain" />
+                  </a>
+                )
+              })()}
+              {selectedOrder.payment_status === 'slip_submitted' && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => confirmPayment(selectedOrder.id)} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">Confirm payment</button>
+                  <button type="button" onClick={() => rejectPayment(selectedOrder.id)} className="rounded-lg bg-amber-100 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-200">Reject payment</button>
+                </div>
+              )}
+            </div>
+          )}
           <div className="mt-5 grid gap-5 lg:grid-cols-2">
             <div>
               <h3 className="font-semibold text-slate-800">Items</h3>
@@ -146,9 +184,7 @@ export default function AdminOrders() {
                 )}
               </div>
               <p className="font-semibold">{formatPrice(o.total)}</p>
-              <select value={o.status} onChange={(e) => updateStatus(o.id, e.target.value)} className="rounded-lg border border-slate-200 px-2 py-1 text-sm capitalize">
-                {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-sm capitalize text-slate-600">{o.status}</span>
               <button type="button" onClick={() => openDetails(o.id)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:border-pink hover:text-pink">View detail</button>
             </div>
 
@@ -157,55 +193,8 @@ export default function AdminOrders() {
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${paymentStatusColor(o.payment_status)}`}>
                   {PAYMENT_STATUS_LABELS[o.payment_status] || o.payment_status}
                 </span>
-                {o.payment_status === 'slip_submitted' && (
-                  <>
-                    <button onClick={() => confirmPayment(o.id)} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700">
-                      Confirm payment
-                    </button>
-                    <button onClick={() => rejectPayment(o.id)} className="rounded-lg bg-amber-100 px-3 py-1.5 text-sm text-amber-800 hover:bg-amber-200">
-                      Reject
-                    </button>
-                  </>
-                )}
               </div>
             )}
-
-            {o.payment_slip_url && (() => {
-              const slipUrl = resolveStorageUrl(o.payment_slip_url)
-              return (
-              <div className="mt-3">
-                <p className="mb-2 text-xs font-medium text-slate-500">Payment slip</p>
-                {slipUrl.endsWith('.pdf') ? (
-                  <a href={slipUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-pink hover:underline">
-                    View PDF receipt
-                  </a>
-                ) : (
-                  <a href={slipUrl} target="_blank" rel="noreferrer">
-                    <img src={slipUrl} alt="Payment slip" className="max-h-48 rounded-lg border border-slate-200 object-contain" />
-                  </a>
-                )}
-              </div>
-              )
-            })()}
-
-            {o.payment_rejection_reason && (
-              <p className="mt-2 text-xs text-red-600">{o.payment_rejection_reason}</p>
-            )}
-
-            <div className="mt-3 flex flex-wrap gap-2">
-              <input
-                type="text"
-                placeholder="Tracking number"
-                defaultValue={o.tracking_number || ''}
-                onBlur={(e) => e.target.value && addTracking(o.id, e.target.value)}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
-              />
-              {o.status !== 'refunded' && (
-                <button onClick={() => refund(o.id)} className="rounded-lg bg-red-50 px-3 py-1.5 text-sm text-red-600 hover:bg-red-100">
-                  Refund
-                </button>
-              )}
-            </div>
           </div>
         ))}
       </div>
