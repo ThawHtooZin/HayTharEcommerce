@@ -1,0 +1,10 @@
+{
+  "name": "myahaythar-ecommerce",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --kill-others-on-fail --names API,UI --prefix-colors blue,magenta \"cd MyaHayTharEcommerce-API && php artisan serve\" \"npm --prefix MyaHayTharEcommerce-UI run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
